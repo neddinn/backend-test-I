@@ -33,7 +33,7 @@ const initSheet = async (sheetTitle, headers) => {
       sheet = info.worksheets[0];
       step();
     }),
-    (step) => sheet.setTitle(, step),
+    (step) => sheet.setTitle(sheetTitle, step),
     (step) => sheet.setHeaderRow(headers, step),
   ], (err) => {
     if(err) console.log('An error occured', err);
@@ -52,3 +52,50 @@ const init = async () => {
   for(let i = 0; i < 80; i++) seperator += '=';
   await initSheet(sheetTitle, sheetHeaders);
 };
+
+const maybeConvertToHashtags = (responseArray) => {
+  return responseArray.map(word => {
+    if(!word.startsWith('#')) return `#${word}`;
+    return word;
+  });
+};
+
+const logData = async (username, followersCount, tweet, cb) => {
+  const rowData = {username, followersCount, tweet};
+  return sheet.addRow(rowData, cb);
+};
+
+const displayData = (username, followersCount, tweet) => {
+  console.log(seperator);
+  console.log(`[x]  Profile Name: ${username}`);
+  console.log(`[x]  Number of followers: ${followersCount}`);
+  console.log(`[x]  Tweet: ${tweet}`);
+};
+
+const registerStream = (hashtags) => {
+  const stream = twitterClient.stream('statuses/filter', { track: `${hashtags}` });
+  console.log('[-]  Filter stream based on the following hashtags', hashtags);
+  stream.on('data', tweet => {
+    const followersCount = tweet.user && tweet.user.followers_count;
+    const username = tweet.user && tweet.user.screen_name;
+    const { text } = tweet;
+    displayData(username, followersCount, text);
+    return logData(username, followersCount, text, () => {
+      return;
+    });
+  });
+
+  stream.on('error', error => {
+    console.log('stream error', error)
+  });
+};
+
+const run = async () => {
+  await init();
+  const response = await inquirer.prompt([{name: 'hashtags', message: messagePrompt,}]);
+  const responseArray = response && response.hashtags.split(/[ ,]+/);
+  const hashtags      = maybeConvertToHashtags(responseArray);
+  await registerStream(hashtags);
+};
+
+run();
