@@ -13,7 +13,7 @@ const twiiterCred = {
 
 const sheetsCred = {
   client_email: process.env.GOOGLESHEET_CLIENT_EMAIL,
-  private_key:  process.env.GOOGLESHEET_PRIVATE_KEY.replace(/\\n/g, '\n')
+  private_key:  process.env.GOOGLESHEET_PRIVATE_KEY.replace(/\\n/g, '\n') //env vars can get screwed up. Cleansup.
 };
 
 let sheet,
